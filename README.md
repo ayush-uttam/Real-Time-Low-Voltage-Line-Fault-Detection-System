@@ -25,22 +25,22 @@ The project enables rapid fault localization, reduced maintenance time, and impr
 ## System Architecture
 
 ```mermaid
-graph TD
-    M1[ESP Master 1]
-    M2[ESP Master 2]
-    M3[ESP Master 3]
+flowchart LR
 
-    UART[ESP Slave UART]
+    P[Power Source]
 
-    WEB[ESP Slave Web Dashboard]
+    P --> N1[Node 1<br/>Current Sensor + ESP Master 1]
+    N1 --> N2[Node 2<br/>Current Sensor + ESP Master 2]
+    N2 --> N3[Node 3<br/>Current Sensor + ESP Master 3]
+    N3 --> L[Load]
 
-    M1 --> UART
-    M2 --> UART
-    M3 --> UART
+    N1 -. ESP-NOW .-> S[ESP Slave Dashboard]
+    N2 -. ESP-NOW .-> S
+    N3 -. ESP-NOW .-> S
 
-    UART --> WEB
-
-    WEB --> Dashboard[Real-Time Monitoring]
+    S --> F[Fault Detection Logic]
+    F --> R[Relay Control]
+    F --> D[Web Dashboard]
 ```
 
 ---
