@@ -277,9 +277,3 @@ The dashboard provides:
 ## Authors
 
 Ayush Uttam and Team
-
----
-
-## License
-
-This project is intended for academic and research purposes.
