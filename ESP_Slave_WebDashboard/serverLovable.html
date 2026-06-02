@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LV Line Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, hsl(240 10% 3.9%) 0%, hsl(240 10% 7%) 100%);
+      color: hsl(210 40% 98%);
+      min-height: 100vh;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 250px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+
+    .sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(263 70% 50%) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: hsl(215 20.2% 65.1%);
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: hsl(210 40% 98%);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(263 70% 50%) 100%);
+      color: white;
+      box-shadow: 0 0 20px hsl(217 91% 60% / 0.3);
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .status-indicator {
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: hsl(142 76% 36%);
+      box-shadow: 0 0 10px currentColor;
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 250px;
+      transition: margin-left 0.3s ease;
+    }
+
+    .main-content.expanded {
+      margin-left: 0;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 24px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header h2 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .content {
+      padding: 32px;
+      animation: fade-in 0.5s ease-out;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px hsl(217 91% 60% / 0.3);
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .grid-cols-3 {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    /* Status Cards */
+    .node-card {
+      position: relative;
+    }
+
+    .node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+
+    .node-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .metric-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: hsl(215 20.2% 65.1%);
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .status-active {
+      color: hsl(142 76% 36%);
+      font-weight: 600;
+    }
+
+    .status-inactive {
+      color: hsl(0 72% 51%);
+      font-weight: 600;
+    }
+
+    /* Overall Status Card */
+    .status-overview {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .status-info h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      color: hsl(215 20.2% 65.1%);
+    }
+
+    .status-message {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .status-stats {
+      text-align: right;
+    }
+
+    .status-stats p {
+      font-size: 14px;
+      color: hsl(215 20.2% 65.1%);
+      margin-bottom: 8px;
+    }
+
+    .status-count {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(263 70% 50%) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Map */
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      opacity: 0.1;
+      background-image: 
+        linear-gradient(to right, hsl(217 91% 60%) 1px, transparent 1px),
+        linear-gradient(to bottom, hsl(217 91% 60%) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .node-dot {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 4px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .node-dot.active {
+      background: hsl(142 76% 36%);
+      border-color: hsl(142 76% 36%);
+      box-shadow: 0 0 20px hsl(142 76% 36%);
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    .node-dot.inactive {
+      background: hsl(0 72% 51%);
+      border-color: hsl(0 72% 51%);
+    }
+
+    .node-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-bottom: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      font-size: 12px;
+    }
+
+    .node-dot:hover .node-tooltip {
+      opacity: 1;
+    }
+
+    .connection-line {
+      position: absolute;
+      height: 2px;
+      transform-origin: left center;
+      transition: all 0.3s ease;
+    }
+
+    .connection-line.active {
+      background: hsl(142 76% 36%);
+    }
+
+    .connection-line.inactive {
+      background: hsl(0 72% 51%);
+      background-image: repeating-linear-gradient(
+        to right,
+        hsl(0 72% 51%) 0,
+        hsl(0 72% 51%) 5px,
+        transparent 5px,
+        transparent 10px
+      );
+    }
+
+    /* Table */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    th {
+      font-weight: 600;
+      color: hsl(210 40% 98%);
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .badge-primary {
+      background: rgba(91, 164, 255, 0.1);
+      color: hsl(217 91% 60%);
+    }
+
+    .badge-accent {
+      background: rgba(139, 92, 246, 0.1);
+      color: hsl(263 70% 50%);
+    }
+
+    .badge-gradient {
+      background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(263 70% 50%) 100%);
+      color: white;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+
+    .legend-line {
+      width: 32px;
+      height: 2px;
+    }
+
+    /* Animations */
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 10px currentColor;
+      }
+      50% {
+        opacity: 0.7;
+        box-shadow: 0 0 20px currentColor;
+      }
+    }
+
+    /* Page visibility */
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .content {
+        padding: 16px;
+      }
+
+      .status-overview {
+        flex-direction: column;
+        gap: 24px;
+        text-align: center;
+      }
+
+      .status-stats {
+        text-align: center;
+      }
+
+      .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+
+      .overlay.active {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">LV Dashboard</div>
+        <button class="menu-toggle" onclick="toggleSidebar()">
+          <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" onclick="showPage('status')">
+          <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>Status</span>
+        </button>
+        <button class="nav-item" onclick="showPage('map')">
+          <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          <span>Map</span>
+        </button>
+        <button class="nav-item" onclick="showPage('nodes')">
+          <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+          </svg>
+          <span>Nodes</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span style="font-size: 14px; color: hsl(215 20.2% 65.1%)">Connected</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <header class="header">
+        <button class="menu-toggle" onclick="toggleSidebar()">
+          <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h2 id="pageTitle">Status</h2>
+      </header>
+
+      <div class="content">
+        <!-- Status Page -->
+        <div id="status" class="page active">
+          <div class="card status-overview">
+            <div class="status-info">
+              <h3>Network Status</h3>
+              <div class="status-message" id="overallStatus">
+                <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>All Systems Active</span>
+              </div>
+            </div>
+            <div class="status-stats">
+              <p>Active Nodes</p>
+              <div class="status-count" id="nodeCount">0/0</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3" id="statusCards"></div>
+        </div>
+
+        <!-- Map Page -->
+        <div id="map" class="page">
+          <div class="card">
+            <h3 style="margin-bottom: 16px; font-size: 18px;">Network Topology</h3>
+            <div class="map-container" id="mapContainer">
+              <div class="map-grid"></div>
+              <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;" id="connectionLines"></svg>
+              <div id="mapNodes"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="legend">
+              <div class="legend-item">
+                <div class="legend-dot" style="background: hsl(142 76% 36%); box-shadow: 0 0 10px hsl(142 76% 36%);"></div>
+                <span>Active Node</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background: hsl(0 72% 51%);"></div>
+                <span>Inactive Node</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-line" style="background: hsl(142 76% 36%);"></div>
+                <span>Active Connection</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-line" style="background: hsl(0 72% 51%); background-image: repeating-linear-gradient(to right, hsl(0 72% 51%) 0, hsl(0 72% 51%) 5px, transparent 5px, transparent 10px);"></div>
+                <span>Fault Connection</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nodes Page -->
+        <div id="nodes" class="page">
+          <div class="card">
+            <div class="table-container">
+              <table id="nodesTable">
+                <thead>
+                  <tr>
+                    <th>Node</th>
+                    <th>Voltage (V)</th>
+                    <th>Current (A)</th>
+                    <th>Status</th>
+                    <th>Power (W)</th>
+                  </tr>
+                </thead>
+                <tbody id="nodesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+            <div class="card">
+              <h4 style="font-size: 14px; color: hsl(215 20.2% 65.1%); margin-bottom: 8px;">Total Voltage</h4>
+              <p class="status-count" id="totalVoltage">0.0 V</p>
+            </div>
+            <div class="card">
+              <h4 style="font-size: 14px; color: hsl(215 20.2% 65.1%); margin-bottom: 8px;">Total Current</h4>
+              <p class="status-count" id="totalCurrent">0.00 A</p>
+            </div>
+            <div class="card">
+              <h4 style="font-size: 14px; color: hsl(215 20.2% 65.1%); margin-bottom: 8px;">Total Power</h4>
+              <p class="status-count" id="totalPower">0.00 W</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let data = { nodes: [] };
+    const nodePositions = [
+      { top: 25, left: 20 },
+      { top: 40, left: 50 },
+      { top: 60, left: 75 }
+    ];
+
+    // Page Navigation
+    function showPage(pageName) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageName).classList.add('active');
+
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      event.target.closest('.nav-item').classList.add('active');
+
+      const titles = { status: 'Status', map: 'Map', nodes: 'Nodes' };
+      document.getElementById('pageTitle').textContent = titles[pageName];
+
+      if (window.innerWidth < 768) {
+        toggleSidebar();
+      }
+    }
+
+    // Sidebar Toggle
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('overlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    }
+
+    // Fetch Data
+    async function fetchData() {
+      try {
+        const res = await fetch('/data');
+        data = await res.json();
+        updateStatus();
+        updateMap();
+        updateNodes();
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    }
+
+    // Update Status Page
+    function updateStatus() {
+      const activeCount = data.nodes.filter(n => n.active).length;
+      const allActive = activeCount === data.nodes.length;
+
+      const overallStatus = document.getElementById('overallStatus');
+      if (allActive) {
+        overallStatus.innerHTML = `
+          <svg width="32" height="32" fill="hsl(142 76% 36%)" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <span style="color: hsl(142 76% 36%)">All Systems Active</span>
+        `;
+      } else {
+        overallStatus.innerHTML = `
+          <svg width="32" height="32" fill="hsl(0 72% 51%)" viewBox="0 0 24 24" style="animation: pulse-glow 1s ease-in-out infinite">
+            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+          </svg>
+          <span style="color: hsl(0 72% 51%)">Fault Detected</span>
+        `;
+      }
+
+      document.getElementById('nodeCount').textContent = `${activeCount}/${data.nodes.length}`;
+
+      const statusCards = document.getElementById('statusCards');
+      statusCards.innerHTML = data.nodes.map(node => `
+        <div class="card node-card">
+          <div class="node-header">
+            <h3 class="node-title">${node.name}</h3>
+            <div class="status-dot" style="background: ${node.active ? 'hsl(142 76% 36%)' : 'hsl(0 72% 51%)'}; ${node.active ? 'animation: pulse-glow 2s ease-in-out infinite' : ''}"></div>
+          </div>
+          <div>
+            <div class="metric">
+              <div class="metric-label">
+                <svg width="16" height="16" fill="hsl(217 91% 60%)" viewBox="0 0 24 24">
+                  <path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z"/>
+                </svg>
+                <span>Voltage</span>
+              </div>
+              <span class="metric-value">${node.voltage.toFixed(1)} V</span>
+            </div>
+            <div class="metric">
+              <div class="metric-label">
+                <svg width="16" height="16" fill="hsl(263 70% 50%)" viewBox="0 0 24 24">
+                  <path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z"/>
+                </svg>
+                <span>Current</span>
+              </div>
+              <span class="metric-value">${node.current.toFixed(2)} A</span>
+            </div>
+            <div style="padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+              <span class="${node.active ? 'status-active' : 'status-inactive'}" style="font-size: 14px;">
+                Status: ${node.active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Update Map Page
+    function updateMap() {
+      const mapNodes = document.getElementById('mapNodes');
+      mapNodes.innerHTML = data.nodes.map((node, i) => {
+        const pos = nodePositions[i] || { top: 50, left: 50 };
+        return `
+          <div class="node-dot ${node.active ? 'active' : 'inactive'}" 
+               style="top: ${pos.top}%; left: ${pos.left}%;">
+            ${i + 1}
+            <div class="node-tooltip">
+              <p style="font-weight: 600; margin-bottom: 4px;">${node.name}</p>
+              <p>Voltage: ${node.voltage.toFixed(1)} V</p>
+              <p>Current: ${node.current.toFixed(2)} A</p>
+              <p style="color: ${node.active ? 'hsl(142 76% 36%)' : 'hsl(0 72% 51%)'}">
+                ${node.active ? 'Active' : 'Inactive'}
+              </p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Draw connection lines
+      const svg = document.getElementById('connectionLines');
+      const lines = [];
+      for (let i = 0; i < data.nodes.length - 1; i++) {
+        const pos1 = nodePositions[i];
+        const pos2 = nodePositions[i + 1];
+        const active = data.nodes[i].active && data.nodes[i + 1].active;
+        
+        lines.push(`
+          <line 
+            x1="${pos1.left}%" 
+            y1="${pos1.top}%" 
+            x2="${pos2.left}%" 
+            y2="${pos2.top}%"
+            stroke="${active ? 'hsl(142 76% 36%)' : 'hsl(0 72% 51%)'}"
+            stroke-width="2"
+            stroke-dasharray="${active ? 'none' : '5,5'}"
+          />
+        `);
+      }
+      svg.innerHTML = lines.join('');
+    }
+
+    // Update Nodes Page
+    function updateNodes() {
+      const tbody = document.getElementById('nodesTableBody');
+      tbody.innerHTML = data.nodes.map(node => {
+        const power = (node.voltage * node.current).toFixed(2);
+        return `
+          <tr>
+            <td style="font-weight: 500">${node.name}</td>
+            <td><span class="badge badge-primary">${node.voltage.toFixed(1)}</span></td>
+            <td><span class="badge badge-accent">${node.current.toFixed(2)}</span></td>
+            <td>
+              ${node.active ? 
+                '<svg width="16" height="16" fill="hsl(142 76% 36%)" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><path fill="white" d="M9 12l2 2 4-4"/></svg>' :
+                '<svg width="16" height="16" fill="hsl(0 72% 51%)" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><path fill="white" d="M15 9l-6 6m0-6l6 6"/></svg>'
+              }
+              <span class="${node.active ? 'status-active' : 'status-inactive'}">
+                ${node.active ? 'Active' : 'Inactive'}
+              </span>
+            </td>
+            <td><span class="badge badge-gradient">${power}</span></td>
+          </tr>
+        `;
+      }).join('');
+
+      const totalVoltage = data.nodes.reduce((sum, n) => sum + n.voltage, 0);
+      const totalCurrent = data.nodes.reduce((sum, n) => sum + n.current, 0);
+      const totalPower = data.nodes.reduce((sum, n) => sum + (n.voltage * n.current), 0);
+
+      document.getElementById('totalVoltage').textContent = totalVoltage.toFixed(1) + ' V';
+      document.getElementById('totalCurrent').textContent = totalCurrent.toFixed(2) + ' A';
+      document.getElementById('totalPower').textContent = totalPower.toFixed(2) + ' W';
+    }
+
+    // Initialize
+    setInterval(fetchData, 2000);
+    fetchData();
+  </script>
+</body>
+</html>
