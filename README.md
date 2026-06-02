@@ -276,4 +276,4 @@ The dashboard provides:
 
 ## Authors
 
-Ayush Uttam and Team
+Ayush Uttam and Team 
