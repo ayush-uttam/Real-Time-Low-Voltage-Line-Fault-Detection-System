@@ -276,4 +276,4 @@ The dashboard provides:
 
 ## Authors
 
-Ayush Uttam, Anuj Kumar Mishra and Satyam Singh
+Ayush Uttam, Anuj Kumar Mishra and Satyam Singh. 
